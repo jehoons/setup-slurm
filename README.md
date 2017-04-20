@@ -1,6 +1,11 @@
+# setup-slurm
+
+[SLURM](https://slurm.schedmd.com/)은 잘 알려진 워크로드 메니져이다. 
+
 
 시작에 앞서서 사용자 아이디를 생성하고, 다음과 같이 SU권한을 주도록 하자. 
-```
+
+```shell
 sudo adduser <username> sudo
 ```
 
@@ -8,13 +13,13 @@ sudo adduser <username> sudo
 
 Step 1. Install dependency
 
-```
+```shell
 sudo apt-get install libssl-dev
 ```
 
 Step 2. Build slurm
 
-```
+```shell
 tar xvfz slurm-14.11.6.tar.gz 
 cd slurm-14.11.6
 ./configure --with-munge=/usr/local/lib
@@ -23,14 +28,14 @@ cd slurm-14.11.6
 
 Step 3. Make munge.key 
 
-```
+```shell
 dd if=/dev/random bs=1 count=1024 >/usr/local/etc/munge/munge.key
 ```
 This file should be permissioned 0400 and owned by the user that the munged daemon will run as. Securely propagate this file (e.g., via ssh) to all other hosts within the same security realm.
 
 Step 4. Server Test 
 
-```
+```shell
 sudo ./check.sh 
 ```
 
@@ -39,7 +44,7 @@ included version is most stable version.
 Step 5. Change UID, GID 
 서버 및 노드들의 사용자, 그룹 아이디를 동일하게 변경해 준다. 
 
-```
+```shell
 usermod -u <NEWUID> <LOGIN>    
 groupmod -g <NEWGID> <GROUP>
 find / -user <OLDUID> -exec chown -h <NEWUID> {} \;
@@ -48,7 +53,7 @@ usermod -g <NEWGID> <LOGIN>
 ```
 
 Step 6. pdsh 설정 
-```
+```shell
 sudo apt install pdsh 
 echo "ssh" > /etc/pdsh/rcmd_default
 ```
@@ -56,7 +61,7 @@ echo "ssh" > /etc/pdsh/rcmd_default
 nodes에 노드이름을 넣기. 
 
 Step 7. 클라이언트 시작하기 
-```
+```shell
 sudo slurmd 
 sudo munged 
 ```
@@ -71,7 +76,7 @@ http://unix.stackexchange.com/questions/196932/how-to-limit-the-number-of-active
 
 또한, 알수없는 이유로 인해서 scp가 무시되는 경우가 있다. 이 경우에를 방지하기 위해서 서버에 파일이 업로드 되었는가를 검사하고 없으면 scp를 반복하는 방법이 있다.
 
-```
+```sh
 i="0"
 while [ $i -lt 10 ]
 do
@@ -81,4 +86,4 @@ do
 done
 ```
 
-이 코드를 테스트해 본 결과, 루프를 사용한 경우와 그렇지 않는 경우는 각각 100%, 60% 수준이었다.
+이 코드를 테스트해 본 결과, 루프를 사용한 경우와 그렇지 않는 경우는 각각 100%, 60% 이었다. scp를 이용한 파일 복사가 실패확률이 60%나 된다는 사실이 놀랍다. 이것은 다수의 컴퓨팅노드들이 동시에 서버로 파일을 전송하고자 하는 시도를 ssh서버가 방어하고 있기 때문일 것으로 생각된다.
